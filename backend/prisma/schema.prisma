@@ -1,13 +1,101 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // or mysql/sqlite (use your DB)
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+enum OrderStatus {
+  PLACED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+
+  medicines Medicine[]
+  orders    Order[]
+  reviews   Review[]
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  medicines Medicine[]
+}
+
+model Medicine {
+  id          String   @id @default(uuid())
+  name        String
+  price       Float
+  stock       Int
+  description String?
+
+  categoryId String
+  sellerId   String
+
+  category Category @relation(fields: [categoryId], references: [id])
+  seller   User     @relation(fields: [sellerId], references: [id])
+
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  status          OrderStatus @default(PLACED)
+  totalPrice      Float
+  shippingAddress String
+  createdAt       DateTime    @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id         String @id @default(uuid())
+  orderId    String
+  medicineId String
+  quantity   Int
+  price      Float
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  medicine Medicine @relation(fields: [medicineId], references: [id])
+}
+
+model Review {
+  id         String @id @default(uuid())
+  userId     String
+  medicineId String
+  rating     Int
+  comment    String?
+
+  user     User     @relation(fields: [userId], references: [id])
+  medicine Medicine @relation(fields: [medicineId], references: [id])
 }
