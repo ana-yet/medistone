@@ -37,6 +37,7 @@ model User {
   medicines Medicine[]
   orders    Order[]
   reviews   Review[]
+  cart      Cart?
 }
 
 model Category {
@@ -61,8 +62,30 @@ model Medicine {
 
   orderItems OrderItem[]
   reviews    Review[]
+  cartItems  CartItem[]
 
   createdAt DateTime @default(now())
+}
+
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+  id         String @id @default(uuid())
+  cartId     String
+  medicineId String
+  quantity   Int
+
+  cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, medicineId])
 }
 
 model Order {
@@ -95,6 +118,8 @@ model Review {
   rating     Int
   comment    String?
 
-  user     User     @relation(fields: [userId], references: [id])
-  medicine Medicine @relation(fields: [medicineId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, medicineId])
 }
